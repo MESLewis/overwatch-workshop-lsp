@@ -33,17 +33,5 @@ export function generateCompletionItems(_textDocumentPosition: TextDocumentPosit
 			detail: element.description
 		});
 	});
-		
-	completionItems.push(
-		{
-			label: 'TypeScript',
-			kind: CompletionItemKind.Text,
-			data: 1
-		},
-		{
-			label: 'JavaScript',
-			kind: CompletionItemKind.Text,
-			data: 2
-		});
 	return completionItems;
 }

@@ -21,6 +21,27 @@
 	],
 	"main": "./client/out/extension",
 	"contributes": {
+		"languages": [
+			{
+				"id": "oww",
+				"aliases": [
+					"Overwatch Workshop Script"
+				],
+				"extensions": [
+					".oww",
+					".ow",
+					".ows"
+				],
+				"configuration": "./language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "oww",
+				"scopeName": "source.oww",
+				"path": "./syntaxes/oww.tmLanguage.json"
+			}
+		],
 		"configuration": {
 			"type": "object",
 			"title": "Example configuration",
@@ -54,10 +75,12 @@
 	},
 	"devDependencies": {
 		"@types/mocha": "^5.2.7",
-		"mocha": "^6.2.2",
 		"@types/node": "^12.11.7",
-		"eslint": "^6.4.0",
 		"@typescript-eslint/parser": "^2.3.0",
-		"typescript": "^3.8.3"
+		"eslint": "^6.4.0",
+		"js-yaml": "^3.13.1",
+		"mocha": "^6.2.2",
+		"typescript": "^3.8.3",
+		"vscode-tmgrammar-test": "0.0.8"
 	}
 }

@@ -1,0 +1,18 @@
+" SYNTAX TEST "source.oww" "First Test"
+rule("Init Global Variables")
+{
+"<- punctuation.section.block.begin.oww
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Set Global Variable(pathNodeEffects, Empty Array);
+		Set Global Variable(pathNodePositions, Empty Array);
+		"Handles looping when cycling player modes"
+	"	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ comment.line.oww
+		Set Global Variable(maxPlayerModes, 1);
+	}
+}

@@ -28,6 +28,39 @@
 			"problemMatcher": [
 				"$tsc-watch"
 			]
+		},
+		{
+			"label": "Test tmLanguage",
+			"type": "shell",
+			"command": "npx vscode-tmgrammar-test -c -s source.oww -g syntaxes/oww.tmLanguage.json -t \"./syntaxes/test/*.oww\"",
+			"group": "test",
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			},
+			"problemMatcher": {
+				"fileLocation": [
+					"relative",
+					"${workspaceFolder}"
+				],
+				"pattern": [
+					{
+						"regexp": "^(ERROR)\\s([^:]+):(\\d+):(\\d+):(\\d+)\\s(.*)$",
+						"severity": 1,
+						"file": 2,
+						"line": 3,
+						"column": 4,
+						"endColumn": 5,
+						"message": 6
+					}
+				]
+			}
+		},
+		{
+			"label": "Compile tmLanguage.yaml",
+			"type": "shell",
+			"command": "npx js-yaml syntaxes/oww.tmLanguage.yaml > syntaxes/oww.tmLanguage.json",
+			"group": "build"
 		}
 	]
 }
