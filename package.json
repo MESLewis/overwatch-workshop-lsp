@@ -1,5 +1,4 @@
 {
-	"enableProposedApi": true,
 	"name": "lsp-sample",
 	"description": "A language server example",
 	"author": "Microsoft Corporation",

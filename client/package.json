@@ -1,5 +1,4 @@
 {
-	"enableProposedApi": true,
 	"name": "lsp-sample-client",
 	"description": "VSCode part of a language server",
 	"author": "Microsoft Corporation",
