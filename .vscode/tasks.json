@@ -59,8 +59,8 @@
 		{
 			"label": "Compile tmLanguage.yaml",
 			"type": "shell",
-			"command": "npx js-yaml syntaxes/oww.tmLanguage.yaml > syntaxes/oww.tmLanguage.json",
-			"group": "build"
+			"command": "npx any-json syntaxes/oww.tmLanguage.yaml syntaxes/oww.tmLanguage.json",
+			"group": "build",
 		}
 	]
 }

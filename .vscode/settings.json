@@ -6,25 +6,9 @@
 	"editor.codeActionsOnSave": {
 		"source.fixAll.eslint": true
 	},
-	"emeraldwalk.runonsave": {
-		"commands": [
-			{
-				"match": ".*\\.tmLanguage\\.yaml",
-				"isAsync": true,
-				"cmd": "echo 'I run for all ${file}.'"
-			},
-			{
-				"match": "\\.txt$",
-				"cmd": "echo 'I am a .txt file ${file}.'"
-			},
-			{
-				"match": "\\.js$",
-				"cmd": "echo 'I am a .js file ${file}.'"
-			},
-			{
-				"match": ".*",
-				"cmd": "echo 'I am ${env.USERNAME}.'"
-			}
+	"triggerTaskOnSave.tasks": {
+		"Compile tmLanguage.yaml": [
+			"syntaxes/*.tmLanguage.yaml"
 		]
 	}
 }
