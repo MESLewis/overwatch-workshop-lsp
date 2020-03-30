@@ -1,4 +1,5 @@
 {
+	"enableProposedApi": true,
 	"name": "lsp-sample",
 	"description": "A language server example",
 	"author": "Microsoft Corporation",
@@ -39,7 +40,7 @@
 			{
 				"language": "oww",
 				"scopeName": "source.oww",
-				"path": "./syntaxes/oww.tmLanguage.json"
+				"path": "./syntaxes/old.oww.tmLanguage.json"
 			}
 		],
 		"configuration": {

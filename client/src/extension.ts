@@ -4,7 +4,14 @@
  * ------------------------------------------------------------------------------------------ */
 
 import * as path from 'path';
-import { workspace, ExtensionContext } from 'vscode';
+import { 
+	workspace, 
+	ExtensionContext
+} from 'vscode';
+
+// import {
+	
+// } from '../../vscode.proposed'
 
 import {
 	LanguageClient,

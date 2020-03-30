@@ -1,4 +1,5 @@
 {
+	"enableProposedApi": true,
 	"name": "lsp-sample-server",
 	"description": "Example implementation of a language server in node.",
 	"version": "1.0.0",
