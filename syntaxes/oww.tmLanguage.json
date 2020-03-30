@@ -4,7 +4,13 @@
     "scopeName": "source.oww",
     "patterns": [
         {
-            "include": "#keyword"
+            "include": "#keyword-root-block-start"
+        },
+        {
+            "include": "#ow-rule-header"
+        },
+        {
+            "include": "#ow-disabled"
         },
         {
             "include": "#comment"
@@ -13,26 +19,59 @@
             "include": "#string"
         },
         {
-            "include": "#function"
+            "include": "#number"
         },
         {
-            "include": "#paren-expression"
+            "include": "#paren-block"
+        },
+        {
+            "include": "#curly-block"
         }
     ],
     "repository": {
-        "function": {
+        "keyword-root-block-start": {
             "patterns": [
                 {
-                    "name": "support.function.oww",
-                    "match": "([A-Za-z0-9\\-_]\\s?)+(?=\\()"
+                    "name": "keyword.other.block.root.oww",
+                    "match": "(?xi) ^(\\s)* \\b( settings |variables |subroutines )\\b(\\s)*$ "
                 }
             ]
         },
-        "keyword": {
+        "keyword-nested-block-start": {
             "patterns": [
                 {
-                    "name": "keyword.other.oww",
-                    "match": "^\\s*\\b[a-z]+\\b"
+                    "name": "keyword.other.block.oww",
+                    "match": "(?xi) ^(\\s)* \\b( main |lobby |modes |General |event |conditions |actions )\\b(\\s)*$ "
+                }
+            ]
+        },
+        "ow-rule-header": {
+            "patterns": [
+                {
+                    "name": "storage.type.function.oww",
+                    "begin": "\\s*(rule)(?=\\(.*\\))",
+                    "end": "\\)",
+                    "patterns": [
+                        {
+                            "include": "#string"
+                        }
+                    ]
+                }
+            ]
+        },
+        "ow-disabled": {
+            "patterns": [
+                {
+                    "name": "invalid.depreciated.disabled.oww",
+                    "match": "\\b(disabled)\\b(.*)",
+                    "captures": {
+                        "1": {
+                            "name": "invalid.depreciated.disabled.oww"
+                        },
+                        "2": {
+                            "name": "comment.line.disabled.oww"
+                        }
+                    }
                 }
             ]
         },
@@ -63,27 +102,203 @@
                 }
             ]
         },
-        "paren-expression": {
+        "curly-block": {
             "patterns": [
                 {
-                    "begin": "\\(",
+                    "begin": "{",
                     "beginCaptures": {
                         "0": {
-                            "name": "punctuation.paren.begin.oww"
+                            "name": "meta.brace.curly.begin.oww"
+                        }
+                    },
+                    "end": "}",
+                    "endCaptures": {
+                        "0": {
+                            "name": "meta.brace.curly.end.oww"
+                        }
+                    },
+                    "patterns": [
+                        {
+                            "include": "$self"
+                        },
+                        {
+                            "include": "#keyword-nested-block-start"
+                        },
+                        {
+                            "include": "#statements-all"
+                        },
+                        {
+                            "include": "#comment"
+                        },
+                        {
+                            "include": "#language-constant-conditions"
+                        },
+                        {
+                            "include": "#ow-disabled"
+                        },
+                        {
+                            "include": "#arithmetic-operator"
+                        }
+                    ]
+                }
+            ]
+        },
+        "statements-all": {
+            "patterns": [
+                {
+                    "include": "$self"
+                },
+                {
+                    "include": "#functions-general"
+                },
+                {
+                    "include": "#functions-flow-control"
+                },
+                {
+                    "include": "#functions-arithmetic"
+                },
+                {
+                    "include": "#statements-flow-control"
+                },
+                {
+                    "include": "#arithmetic-operator"
+                },
+                {
+                    "include": "#statements-common"
+                }
+            ]
+        },
+        "statements-common": {
+            "patterns": [
+                {
+                    "include": "#language-constant-value"
+                },
+                {
+                    "include": "#statements-parameters"
+                }
+            ]
+        },
+        "functions-general": {
+            "patterns": [
+                {
+                    "begin": "(?x) \\b( ((Set|Modify)\\ )?Player\\ Variable |Create\\ Effect )(?=\\(.*\\))\\b ",
+                    "beginCaptures": {
+                        "0": {
+                            "name": "entity.name.function.keyword.oww"
                         }
                     },
                     "end": "\\)",
-                    "endCaptures": {
-                        "0": {
-                            "name": "punctuation.paren.end.oww"
-                        }
-                    },
-                    "name": "expression.group.oww",
                     "patterns": [
                         {
-                            "include": "#number"
+                            "include": "#statements-common"
                         }
                     ]
+                }
+            ]
+        },
+        "functions-flow-control": {
+            "patterns": [
+                {
+                    "begin": "(?x) \\b( If |Call\\ Subroutine |For\\ (Global|Player)\\ Variable |Wait )(?=\\(.*\\))\\b ",
+                    "beginCaptures": {
+                        "0": {
+                            "name": "keyword.control.function.oww"
+                        }
+                    },
+                    "end": "\\)"
+                },
+                {
+                    "include": "#statements-common"
+                }
+            ]
+        },
+        "functions-arithmetic": {
+            "patterns": [
+                {
+                    "begin": "(?x) \\b( Is\\ Alive |Value\\ In\\ Array |Compare |Is\\ Button\\ Held )(?=\\(.*\\))\\b ",
+                    "beginCaptures": {
+                        "0": {
+                            "name": "entity.name.function.keyword.oww"
+                        }
+                    },
+                    "end": "\\)"
+                },
+                {
+                    "include": "#statements-all"
+                }
+            ]
+        },
+        "statements-flow-control": {
+            "patterns": [
+                {
+                    "name": "keyword.control.statement.oww",
+                    "match": "(?x) \\b( End |Else |Abort(\\ When\\ (True|False))? |Loop\\ If\\ Condition\\ Is\\ True )\\b "
+                }
+            ]
+        },
+        "statements-parameters": {
+            "patterns": [
+                {
+                    "name": "storage.type.parameter.variable.language.oww",
+                    "match": "(?x) \\b( Event\\ Player |Empty\\ Array |All\\ Teams )\\b "
+                },
+                {
+                    "include": "#player-buttons"
+                }
+            ]
+        },
+        "player-buttons": {
+            "patterns": [
+                {
+                    "match": "(?x) \\b( Primary\\ Fire )\\b "
+                }
+            ]
+        },
+        "arithmetic-operator": {
+            "patterns": [
+                {
+                    "name": "keyword.operator.arithmetic.oww",
+                    "match": "(==|!=|>=|<=|>|<)"
+                }
+            ]
+        },
+        "language-constant-value": {
+            "patterns": [
+                {
+                    "include": "#language-constant-value-settings"
+                },
+                {
+                    "include": "#language-constant-value-event"
+                },
+                {
+                    "include": "#language-constant-value-conditions"
+                }
+            ]
+        },
+        "language-constant-value-settings": {
+            "patterns": [
+                {
+                    "name": "constant.language.settings.oww",
+                    "match": "(?x) \\b( Yes |No |Paused |Never |Off |On |Enabled |Disabled )\\b "
+                }
+            ]
+        },
+        "language-constant-value-event": {
+            "patterns": [
+                {
+                    "name": "entity.name.type.instance.oww",
+                    "match": "(?x) \\b( Ongoing\\ -\\ (Global|Each\\ Player) |(Player\\ ( Earned\\ Elimination |Dealt\\ (Damage|Healing|Final\\ Blow) |Took\\ Damage |Received\\ Healing |(Joined|Left)\\ Match |Died )) |Team\\ (1|2) |All |Slot\\ \\d{1,2} |Subroutine )\\b "
+                }
+            ]
+        },
+        "language-constant-value-conditions": {
+            "patterns": [
+                {
+                    "name": "entity.name.type.instance.oww",
+                    "match": "(?x) \\b( True |False )\\b "
+                },
+                {
+                    "include": "#number"
                 }
             ]
         }

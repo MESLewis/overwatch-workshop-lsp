@@ -61,6 +61,21 @@
 			"type": "shell",
 			"command": "npx any-json syntaxes/oww.tmLanguage.yaml syntaxes/oww.tmLanguage.json",
 			"group": "build",
+			"problemMatcher": {
+				"fileLocation": [
+					"relative",
+					"${workspaceFolder}"
+				],
+				"pattern": [
+					{
+						"regexp": "^(YAMLException:)\\s(\\D*)(\\d+)(\\D*)(\\d+)",
+						"file": 1,
+						"line": 3,
+						"column": 5,
+						"message": 2
+					}
+				]
+			}
 		}
 	]
 }
