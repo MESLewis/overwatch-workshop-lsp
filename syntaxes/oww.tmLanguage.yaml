@@ -2,43 +2,46 @@ $schema: 'https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlangu
 name: Overwatch Workshop Script
 scopeName: source.oww
 patterns:
-  - include: '#keywords'
-  - include: '#comments'
-  - include: '#strings'
-  - include: '#functions'
-  - include: '#numbers'
-  - include: '#parens'
+  - include: '#keyword'
+  - include: '#comment'
+  - include: '#string'
+  - include: '#function'
+  # - include: '#number'
+  - include: '#paren-expression'
 repository:
-  functions:
+  'function':
     patterns:
-      - name: support.function
-        match: "([A-Za-z0-9\\-_]\\s?)+(?=\\()"
-  keywords:
+      - name: support.function.oww
+        match: '([A-Za-z0-9\-_]\s?)+(?=\()'
+  'keyword':
     patterns:
       - name: keyword.other.oww
-        match: "^\\s*\\b[a-z]+\\b"
-  comments:
+        match: '^\s*\b[a-z]+\b'
+  'comment':
     patterns:
       - name: comment.line.oww
-        match: "^\\s*\".*"
-  strings:
+        match: '^\s*".*'
+  'string':
     name: string.quoted.double.oww
     begin: '"'
     end: '"'
     patterns:
       - name: constant.character.escape
-        match: "\\\\."
-  numbers:
+        match: '\\.'
+  'number':
     patterns:
       - name: constant.numeric.oww
-        match: "[0-9]+(\\.[0-9]+)?"
-  parens:
+        match: '[0-9]+(\.[0-9]+)?'
+  'paren-expression':
     patterns:
-      - begin: "\\("
+      - begin: '\('
         beginCaptures:
           '0':
-            name: punctuation.section.group.begin.oww
-        end: "\\)"
+            name: punctuation.paren.begin.oww
+        end: '\)'
         endCaptures:
           '0':
-            name: punctuation.section.group.end.oww
+            name: punctuation.paren.end.oww
+        name: 'expression.group.oww'
+        patterns:
+          - include: '#number'

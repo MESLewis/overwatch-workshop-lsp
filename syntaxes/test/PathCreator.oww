@@ -1,4 +1,5 @@
 " SYNTAX TEST "source.oww" "First Test"
+" https://github.com/PanAeon/vscode-tmgrammar-test
 rule("Init Global Variables")
 {
 "<- punctuation.section.block.begin.oww

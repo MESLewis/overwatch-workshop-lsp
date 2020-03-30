@@ -4,34 +4,31 @@
     "scopeName": "source.oww",
     "patterns": [
         {
-            "include": "#keywords"
+            "include": "#keyword"
         },
         {
-            "include": "#comments"
+            "include": "#comment"
         },
         {
-            "include": "#strings"
+            "include": "#string"
         },
         {
-            "include": "#functions"
+            "include": "#function"
         },
         {
-            "include": "#numbers"
-        },
-        {
-            "include": "#parens"
+            "include": "#paren-expression"
         }
     ],
     "repository": {
-        "functions": {
+        "function": {
             "patterns": [
                 {
-                    "name": "support.function",
+                    "name": "support.function.oww",
                     "match": "([A-Za-z0-9\\-_]\\s?)+(?=\\()"
                 }
             ]
         },
-        "keywords": {
+        "keyword": {
             "patterns": [
                 {
                     "name": "keyword.other.oww",
@@ -39,7 +36,7 @@
                 }
             ]
         },
-        "comments": {
+        "comment": {
             "patterns": [
                 {
                     "name": "comment.line.oww",
@@ -47,7 +44,7 @@
                 }
             ]
         },
-        "strings": {
+        "string": {
             "name": "string.quoted.double.oww",
             "begin": "\"",
             "end": "\"",
@@ -58,7 +55,7 @@
                 }
             ]
         },
-        "numbers": {
+        "number": {
             "patterns": [
                 {
                     "name": "constant.numeric.oww",
@@ -66,21 +63,27 @@
                 }
             ]
         },
-        "parens": {
+        "paren-expression": {
             "patterns": [
                 {
                     "begin": "\\(",
                     "beginCaptures": {
                         "0": {
-                            "name": "punctuation.section.group.begin.oww"
+                            "name": "punctuation.paren.begin.oww"
                         }
                     },
                     "end": "\\)",
                     "endCaptures": {
                         "0": {
-                            "name": "punctuation.section.group.end.oww"
+                            "name": "punctuation.paren.end.oww"
                         }
-                    }
+                    },
+                    "name": "expression.group.oww",
+                    "patterns": [
+                        {
+                            "include": "#number"
+                        }
+                    ]
                 }
             ]
         }
