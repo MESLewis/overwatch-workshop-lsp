@@ -6,8 +6,7 @@ import {
 
 import {
 	actionKw
-} from './actions';
-import { ClientRequestArgs } from 'http';
+} from './languageData/actions';
 
 export interface OwwArgs {
 	name: string;

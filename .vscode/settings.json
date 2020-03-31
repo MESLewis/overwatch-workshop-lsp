@@ -10,5 +10,9 @@
 		"Compile tmLanguage.yaml": [
 			"syntaxes/*.tmLanguage.yaml"
 		]
+	},
+	"languageServerExample.trace.server": {
+		"format": "json",
+		"verbosity": "verbose"
 	}
 }

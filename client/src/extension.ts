@@ -6,19 +6,47 @@
 import * as path from 'path';
 import {
 	workspace,
-	ExtensionContext
+	window,
+	ExtensionContext,
+	SemanticTokens,
+	SemanticTokensLegend,
+	DocumentSemanticTokensProvider,
+	DocumentRangeSemanticTokensProvider,
+	commands,
+	OutputChannel,
+	CodeAction
 } from 'vscode';
 
 import {
 	LanguageClient,
 	LanguageClientOptions,
 	ServerOptions,
-	TransportKind
+	TransportKind,
+	TextDocumentIdentifier,
+	Range as LspRange,
+	RequestType,
+	RequestType0
 } from 'vscode-languageclient';
+
+
+interface SemanticTokenParams {
+	textDocument: TextDocumentIdentifier;
+	ranges?: LspRange[];
+}
+
+namespace SemanticTokenRequest {
+	export const type: RequestType<SemanticTokenParams, number[] | null, any, any> = new RequestType('oww/semanticTokens');
+}
+
+namespace SemanticTokenLegendRequest {
+	export const type: RequestType0<{ types: string[]; modifiers: string[] } | null, any, any> = new RequestType0('oww/semanticTokenLegend');
+}
 
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
+	let toDispose = context.subscriptions;
+
 	// The server is implemented in node
 	let serverModule = context.asAbsolutePath(
 		path.join('server', 'out', 'server.js')
@@ -45,7 +73,8 @@ export function activate(context: ExtensionContext) {
 		synchronize: {
 			// Notify the server about file changes to '.clientrc files contained in the workspace
 			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
-		}
+		},
+		traceOutputChannel: window.createOutputChannel('LSP Log'),
 	};
 
 	// Create the language client and start the client.
@@ -57,7 +86,35 @@ export function activate(context: ExtensionContext) {
 	);
 
 	// Start the client. This will also launch the server
-	client.start();
+	let disposable = client.start();
+	toDispose.push(disposable);
+
+	client.onReady().then(() => {
+		client.sendRequest(SemanticTokenLegendRequest.type).then(legend => {
+			if (legend) {
+				const provider: DocumentSemanticTokensProvider & DocumentRangeSemanticTokensProvider = {
+					provideDocumentSemanticTokens(doc) {
+						const params: SemanticTokenParams = {
+							textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(doc),
+						};
+						return client.sendRequest(SemanticTokenRequest.type, params).then(data => {
+							return data && new SemanticTokens(new Uint32Array(data));
+						});
+					},
+					provideDocumentRangeSemanticTokens(doc, range) {
+						const params: SemanticTokenParams = {
+							textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(doc),
+							ranges: [client.code2ProtocolConverter.asRange(range)]
+						};
+						return client.sendRequest(SemanticTokenRequest.type, params).then(data => {
+							return data && new SemanticTokens(new Uint32Array(data));
+						})
+					}
+				};
+				// toDispose.push(languages.registerDocumentSemanticTokensProvider(documentSelector, provider, new SemanticTokensLegend(legend.types, legend.modifiers)));
+			}
+		});
+	});
 }
 
 export function deactivate(): Thenable<void> | undefined {

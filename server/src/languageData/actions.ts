@@ -18,7 +18,7 @@
 import {
     OwwActions,
     OwwArgs
-} from './overwatch-script'
+} from '../overwatch-script'
 
 export const actionKw: OwwActions[] = 
 [

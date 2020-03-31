@@ -14,7 +14,9 @@ import {
 	CompletionItem,
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
-	InitializeResult
+	InitializeResult,
+	RequestType,
+	TextDocumentIdentifier
 } from 'vscode-languageserver';
 
 import {
@@ -38,6 +40,7 @@ let hasWorkspaceFolderCapability: boolean = false;
 let hasDiagnosticRelatedInformationCapability: boolean = false;
 
 connection.onInitialize((params: InitializeParams) => {
+	console.log('Initializing');
 	let capabilities = params.capabilities;
 
 	// Does the client support the `workspace/configuration` request?
@@ -74,6 +77,7 @@ connection.onInitialize((params: InitializeParams) => {
 });
 
 connection.onInitialized(() => {
+	connection.console.log('Server connected');
 	if (hasConfigurationCapability) {
 		// Register for all configuration changes.
 		connection.client.register(DidChangeConfigurationNotification.type, undefined);
