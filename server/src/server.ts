@@ -16,16 +16,28 @@ import {
 	TextDocumentSyncKind,
 	InitializeResult,
 	RequestType,
-	TextDocumentIdentifier
+	TextDocumentIdentifier,
+	Proposed
 } from 'vscode-languageserver';
+
+import {
+	SemanticTokenModifiers,
+	SemanticTokenTypes,
+	SemanticTokensParams,
+	SemanticTokensLegend,
+	SemanticTokensServerCapabilities,
+	SemanticTokensClientCapabilities
+} from 'vscode-languageserver-protocol/lib/protocol.sematicTokens.proposed'
 
 import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
 
 import {
-	generateCompletionItems
+	generateCompletionItems,
+	generateSemanticTokens
 } from './overwatch-script'
+import { SemanticTokensBuilder } from 'vscode-languageserver/lib/sematicTokens.proposed';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -40,7 +52,6 @@ let hasWorkspaceFolderCapability: boolean = false;
 let hasDiagnosticRelatedInformationCapability: boolean = false;
 
 connection.onInitialize((params: InitializeParams) => {
-	console.log('Initializing');
 	let capabilities = params.capabilities;
 
 	// Does the client support the `workspace/configuration` request?
@@ -57,12 +68,15 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities.textDocument.publishDiagnostics.relatedInformation
 	);
 
-	const result: InitializeResult = {
+	const result: InitializeResult & { capabilities: SemanticTokensServerCapabilities }= {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.Full,
 			// Tell the client that the server supports code completion
 			completionProvider: {
 				resolveProvider: true
+			},
+			semanticTokensProvider: {
+				legend: legend
 			}
 		}
 	};
@@ -77,7 +91,6 @@ connection.onInitialize((params: InitializeParams) => {
 });
 
 connection.onInitialized(() => {
-	connection.console.log('Server connected');
 	if (hasConfigurationCapability) {
 		// Register for all configuration changes.
 		connection.client.register(DidChangeConfigurationNotification.type, undefined);
@@ -87,6 +100,86 @@ connection.onInitialized(() => {
 			connection.console.log('Workspace folder change event received.');
 		});
 	}
+});
+
+let tokenBuilders: Map<string, SemanticTokensBuilder> = new Map();
+function getTokenBuilder(document: TextDocument): SemanticTokensBuilder {
+	let result = tokenBuilders.get(document.uri);
+	if (result !== undefined) {
+		return result;
+	}
+	result = new SemanticTokensBuilder();
+	tokenBuilders.set(document.uri, result);
+	return result;
+}
+
+
+const legend: SemanticTokensLegend = {
+	tokenTypes: [
+		'comment', 'string', 'keyword', 'number', 'regexp', 'operator', 'namespace',
+		'type', 'struct', 'class', 'interface', 'enum', 'typeParameter', 'function',
+		'member', 'macro', 'variable', 'parameter', 'property', 'label' ],
+	tokenModifiers: [ 'declaration', 'documentation', 'readonly', 'static', 'abstract', 'deprecated', 'modification', 'async' ]
+}
+
+// function computeLegend(capability: Proposed.SemanticTokensClientCapabilities): Proposed.SemanticTokensLegend {
+// 	const clientTokenTypes = new Set<string>(capability?.textDocument?.semanticTokens?.tokenTypes);
+// 	const clientTokenModifiers = new Set<string>(capability?.textDocument?.semanticTokens?.tokenModifiers);
+
+// 	const tokenTypes: string[] = [];
+// 	for (let type in SemanticTokenTypes) {
+// 		if (clientTokenTypes.has(type)) {
+// 			tokenTypes.push(type);
+// 		} else {
+// 			if (type === 'lambdaFunction') {
+// 				tokenTypes.push('function')
+// 			} else {
+// 				tokenTypes.push('type');
+// 			}
+// 		}
+// 	}
+
+// 	for (let modifier in SemanticTokenModifiers) {
+// 		if (clientTokenModifiers.has(modifier)) {
+// 			tokenModifiers.push(modifier)
+// 		}
+// 	}
+
+// 	return { tokenTypes, tokenModifiers };
+// }
+
+function buildTokens(builder: SemanticTokensBuilder, document: TextDocument) {
+	const text = document.getText();
+	const regexp = /\w+/g;
+	let match: RegExpMatchArray | null;
+	let tokenCounter: number = 0;
+	let modifierCounter: number = 0;
+
+	match = regexp.exec(text);
+	if (match !== null) {
+		for (let entry of match) {
+			const word = match[0];
+			const position = document.positionAt((match.index !== undefined) ? match.index : 0);
+			const tokenType = tokenCounter % legend.tokenTypes.length;
+			const tokenModifier = 1 << modifierCounter % legend.tokenModifiers.length;
+			builder.push(position.line, position.character, word.length, tokenType, tokenModifier);
+			tokenCounter++;
+			modifierCounter++;
+		}
+	}
+}
+
+connection.languages.semanticTokens.on((semanticTokensParams: SemanticTokensParams) => {
+	connection.console.log("Server is finding tokens");
+	const document = documents.get(semanticTokensParams.textDocument.uri);
+	if (document === undefined) {
+		return {
+			data: []
+		}
+	}
+	const builder = getTokenBuilder(document);
+	buildTokens(builder, document);
+	return builder.build();
 });
 
 // The example settings

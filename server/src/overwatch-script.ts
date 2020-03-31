@@ -34,3 +34,7 @@ export function generateCompletionItems(_textDocumentPosition: TextDocumentPosit
 	});
 	return completionItems;
 }
+
+export function generateSemanticTokens(text: string) {
+	//TODO
+}

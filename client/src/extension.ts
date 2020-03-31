@@ -28,20 +28,6 @@ import {
 	RequestType0
 } from 'vscode-languageclient';
 
-
-interface SemanticTokenParams {
-	textDocument: TextDocumentIdentifier;
-	ranges?: LspRange[];
-}
-
-namespace SemanticTokenRequest {
-	export const type: RequestType<SemanticTokenParams, number[] | null, any, any> = new RequestType('oww/semanticTokens');
-}
-
-namespace SemanticTokenLegendRequest {
-	export const type: RequestType0<{ types: string[]; modifiers: string[] } | null, any, any> = new RequestType0('oww/semanticTokenLegend');
-}
-
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
@@ -89,6 +75,7 @@ export function activate(context: ExtensionContext) {
 	let disposable = client.start();
 	toDispose.push(disposable);
 
+	/*
 	client.onReady().then(() => {
 		client.sendRequest(SemanticTokenLegendRequest.type).then(legend => {
 			if (legend) {
@@ -115,6 +102,8 @@ export function activate(context: ExtensionContext) {
 			}
 		});
 	});
+	*/
+	client.registerProposedFeatures();
 }
 
 export function deactivate(): Thenable<void> | undefined {
