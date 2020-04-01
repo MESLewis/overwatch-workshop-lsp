@@ -38,6 +38,7 @@ import {
 	generateSemanticTokens
 } from './overwatch-script'
 import { SemanticTokensBuilder } from 'vscode-languageserver/lib/sematicTokens.proposed';
+import { parse, WorkshopDocument } from './parser';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -311,12 +312,21 @@ connection.onCompletionResolve(
 	}
 );
 
-/*
 connection.onDidOpenTextDocument((params) => {
 	// A text document got opened in VSCode.
 	// params.textDocument.uri uniquely identifies the document. For documents store on disk this is a file URI.
 	// params.textDocument.text the initial full content of the document.
 	connection.console.log(`${params.textDocument.uri} opened.`);
+
+
+
+
+	let wdoc: WorkshopDocument = parse(params.textDocument.text);
+	console.log(wdoc);
+
+
+
+
 });
 connection.onDidChangeTextDocument((params) => {
 	// The content of a text document did change in VSCode.
@@ -329,7 +339,6 @@ connection.onDidCloseTextDocument((params) => {
 	// params.textDocument.uri uniquely identifies the document.
 	connection.console.log(`${params.textDocument.uri} closed.`);
 });
-*/
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
