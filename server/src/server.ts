@@ -71,7 +71,10 @@ connection.onInitialize((params: InitializeParams) => {
 
 	const result: InitializeResult & { capabilities: SemanticTokensServerCapabilities }= {
 		capabilities: {
-			textDocumentSync: TextDocumentSyncKind.Full,
+			textDocumentSync: {
+				openClose: true,
+				change: 2
+			},
 			// Tell the client that the server supports code completion
 			completionProvider: {
 				resolveProvider: true
@@ -234,6 +237,14 @@ documents.onDidClose(e => {
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
+
+	connection.console.log("Starting parsing");
+	let wdoc: WorkshopDocument = parse(change.document.getText());
+	console.log(wdoc);
+	connection.console.log("Finished parsing");
+
+
+
 	validateTextDocument(change.document);
 });
 
@@ -317,15 +328,6 @@ connection.onDidOpenTextDocument((params) => {
 	// params.textDocument.uri uniquely identifies the document. For documents store on disk this is a file URI.
 	// params.textDocument.text the initial full content of the document.
 	connection.console.log(`${params.textDocument.uri} opened.`);
-
-
-
-
-	let wdoc: WorkshopDocument = parse(params.textDocument.text);
-	console.log(wdoc);
-
-
-
 
 });
 connection.onDidChangeTextDocument((params) => {
