@@ -2,14 +2,24 @@ import {
 	ASTNode
 } from './languageData/ASTTypes'
 
-import { Lexer, Token } from './lexer';
+import { Lexer, Token, Kind } from './lexer';
+
+enum context {
+	ROOT, //Outside of all blocks and scopes
+
+
+}
 
 export function parse(text: string): WorkshopDocument {
 	let lexer: Lexer = new Lexer(text);
 
 	let token: Token | null;
 	while((token = lexer.getNextToken()) !== null) {
-		console.log(text.slice(token.fullStart, token.fullStart + token.length));
+		console.log(Kind[token.kind] + "\t\t\t" + lexer.getTextForToken(token));
+
+
+
+
 	}
 	
 	return new WorkshopDocument(text);
