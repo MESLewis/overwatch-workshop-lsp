@@ -1,6 +1,8 @@
+import { lexer } from './parser';
+
 const matcher: RegExp = /(?<leading>\s*)(?<content>(?:[\w\-%\d\.]|[\s](?![\s:"{}();,]))+|[:"{}();,]|[=><!]{1,2})/g
 
-export enum SyntaxKind {
+export const enum SK {
 	Unknown,
 	OpenBrace,
 	CloseBrace,
@@ -18,6 +20,9 @@ export enum SyntaxKind {
 	VariablesKeyword,
 	SubroutinesKeyword,
 	RuleKeyword,
+	EventKeyword,
+	ConditionsKeyword,
+	ActionsKeyword,
 	WORDS, //All other words
 	NumberToken,
 	ArithmeticOperator,
@@ -25,51 +30,57 @@ export enum SyntaxKind {
 	InvalidToken
 }
 
-export type BlockHeader = 
-	| SyntaxKind.SettingsKeyword
-	| SyntaxKind.MainKeyword
-	| SyntaxKind.LobbyKeyword
-	| SyntaxKind.ModesKeyword
-	| SyntaxKind.VariablesKeyword
-	| SyntaxKind.SubroutinesKeyword
-	| SyntaxKind.RuleKeyword
-	;
-
-
-const kindStrings: [SyntaxKind, string | RegExp][] = [
-	[SyntaxKind.OpenBrace, 			"{"],
-	[SyntaxKind.CloseBrace, 			"}"],
-	[SyntaxKind.OpenParen, 			"("],
-	[SyntaxKind.CloseParen, 			")"],
-	[SyntaxKind.ColonToken, 				":"],
-	[SyntaxKind.SemicolonToken, 			";"],
-	[SyntaxKind.CommaToken, 				","],
-	[SyntaxKind.DoubleQuoteToken,			"\""],
-	[SyntaxKind.DisabledKeyword,			"disabled"],
-	[SyntaxKind.SettingsKeyword,			"settings"],
-	[SyntaxKind.MainKeyword,			"main"],
-	[SyntaxKind.LobbyKeyword,			"lobby"],
-	[SyntaxKind.ModesKeyword,			"modes"],
-	[SyntaxKind.VariablesKeyword,			"variables"],
-	[SyntaxKind.SubroutinesKeyword,			"subroutines"],
-	[SyntaxKind.RuleKeyword,			"rule"],
-	// [SyntaxKind.WORDS, 				new RegExp("\\w")],
-	[SyntaxKind.NumberToken, 				new RegExp("\\d")],
-	[SyntaxKind.ArithmeticOperator, 	new RegExp("[=><!]{1,2}")],
+export const BlockHeader = [
+	SK.SettingsKeyword,
+	SK.MainKeyword,
+	SK.LobbyKeyword,
+	SK.ModesKeyword,
+	SK.VariablesKeyword,
+	SK.SubroutinesKeyword,
+	SK.RuleKeyword,
+	SK.EventKeyword,
+	SK.ConditionsKeyword,
+	SK.ActionsKeyword,
 ];
 
-export interface Token<TKind extends SyntaxKind> {
+const kindStrings: [SK, string | RegExp][] = [
+	[SK.OpenBrace, 			"{"],
+	[SK.CloseBrace, 			"}"],
+	[SK.OpenParen, 			"("],
+	[SK.CloseParen, 			")"],
+	[SK.ColonToken, 				":"],
+	[SK.SemicolonToken, 			";"],
+	[SK.CommaToken, 				","],
+	[SK.DoubleQuoteToken,			"\""],
+	[SK.DisabledKeyword,			"disabled"],
+	[SK.SettingsKeyword,			"settings"],
+	[SK.MainKeyword,			"main"],
+	[SK.LobbyKeyword,			"lobby"],
+	[SK.ModesKeyword,			"modes"],
+	[SK.VariablesKeyword,			"variables"],
+	[SK.SubroutinesKeyword,			"subroutines"],
+	[SK.RuleKeyword,			"rule"],
+	[SK.EventKeyword,			"event"],
+	[SK.ConditionsKeyword,			"conditions"],
+	[SK.ActionsKeyword,			"actions"],
+	[SK.NumberToken, 				new RegExp("\\d")],
+	[SK.ArithmeticOperator, 	new RegExp("[=><!]{1,2}")],
+];
+
+export interface Token<TKind> {
 	kind: TKind;
 	fullStart: number; //Start of the token, including leading white space
 	length: number; //length of the token from fullStart
 	start: number; //Start of the token, excluding leading white space
+	debugText?: string;
 }
 
-export class TokenObject<TKind extends SyntaxKind> implements Token<TKind> {
+export class TokenObject<TKind> implements Token<TKind> {
 	kind: TKind;
 	fullStart: number;
 	length: number;
 	start: number;
+	debugText?: string;
 
 	constructor(kind: TKind, fullStart: number, length: number, start:number) {
 		this.kind = kind;
@@ -77,10 +88,9 @@ export class TokenObject<TKind extends SyntaxKind> implements Token<TKind> {
 		this.length = length;
 		this.start = start;
 	}
-
 }
 
-export class MissingTokenObject<TKind extends SyntaxKind> extends TokenObject<TKind> {
+export class MissingTokenObject<TKind> extends TokenObject<TKind> {
 	constructor(kind: TKind, fullStart: number) {
 		super(kind, fullStart, 0, fullStart);
 	}
@@ -93,7 +103,7 @@ export class Lexer {
 		this.text = text
 	}
 
-	public getNextToken(): Token<SyntaxKind> {
+	public getNextToken(): Token<SK> {
 		let nextMatch: RegExpExecArray | null = matcher.exec(this.text);
 		if (nextMatch !== null) {
 			let nextToken: Token<any> = {
@@ -102,30 +112,31 @@ export class Lexer {
 				start: nextMatch.index + (nextMatch.groups?.leading.length || 0),
 				length: nextMatch[0].length
 			}
+			nextToken.debugText = lexer.getTextForToken(nextToken);
 			return nextToken;
 		} else {
 			let eofToken: Token<any> = {
-				kind: SyntaxKind.EndOfFileToken,
+				kind: SK.EndOfFileToken,
 				fullStart: 0,
 				start: 0,
 				length: 1
-
 			}
+			eofToken.debugText = "";
 			return eofToken;
 		}
 	}
 
-	private determineKind(match: RegExpMatchArray): SyntaxKind {
+	private determineKind(match: RegExpMatchArray): SK {
 		if(match.index === undefined) {
-			return SyntaxKind.InvalidToken;
+			return SK.InvalidToken;
 		}
 		let start = match.index + (match.groups?.leading.length || 0);
 		let length = match.groups?.content.length || 0;
 		let content = this.text.slice(start, start + length);
 
-		let retKind = SyntaxKind.InvalidToken;
+		let retKind = SK.InvalidToken;
 
-		kindStrings.forEach((match: [SyntaxKind, string | RegExp], index: number, array: [SyntaxKind, string | RegExp][]) => {
+		kindStrings.forEach((match: [SK, string | RegExp], index: number, array: [SK, string | RegExp][]) => {
 			if((match[1] as RegExp).test) {
 				if((match[1] as RegExp).test(content)) {
 					retKind = match[0];

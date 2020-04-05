@@ -1,8 +1,8 @@
 import {
-	Node, BlockNode, DocumentNode, RuleHeaderNode, StringLiteralNode, TempNode
+	Node, BlockNode, DocumentNode, RuleHeaderNode, StringLiteralNode, ListNode, NodeOrToken
 } from './Node'
 
-import { Lexer, Token, SyntaxKind, MissingTokenObject, BlockHeader } from './lexer';
+import { Lexer, Token, SK, MissingTokenObject, BlockHeader } from './lexer';
 
 enum Context {
 	ROOT, //Outside of all blocks and scopes
@@ -12,9 +12,10 @@ enum Context {
 	RULE_BLOCK,
 }
 
-let token: Token<any> = new MissingTokenObject(SyntaxKind.InvalidToken, 0);
+let token: Token<any> = new MissingTokenObject(SK.InvalidToken, 0);
 let currentContext: Context = Context.ROOT;
-let lexer: Lexer = new Lexer("");
+//Exporting this to be used in Node.toString(). Probably not the best but needed for visualizing.
+export let lexer: Lexer = new Lexer("");
 
 export function parse(text: string): Node {
 	currentContext = Context.ROOT;
@@ -22,71 +23,80 @@ export function parse(text: string): Node {
 	token = lexer.getNextToken();
 
 	let documentNode: Node = new DocumentNode();
-	while (token.kind !== SyntaxKind.EndOfFileToken) {
+	while (token.kind !== SK.EndOfFileToken) {
 		documentNode.children.push(parseStatements(documentNode));
 	}
+	console.log(documentNode.toString());
 	return documentNode;
 }
 
-function tokenKind(): SyntaxKind {
+function tokenKind(): SK {
 	return token.kind;
 }
 
-function eat(...kinds: SyntaxKind[]): Token<any> {
-	for (const kind of kinds) {
-		if(token.kind === kind) {
-			let oldToken = token;
-			token = lexer.getNextToken();
-			return oldToken;
-		}
-	}
-	return new MissingTokenObject(kinds[0], token.fullStart)
-}
 
-function eat1(kind: SyntaxKind): Token<any> {
-	if (token.kind === kind) {
-		let oldToken = token;
-		token = lexer.getNextToken();
-		return oldToken;
-	} else {
-		return new MissingTokenObject(kind, token.fullStart)
-	}
-}
-
-function eatType<TKind extends SyntaxKind>(): Token<TKind> {
-	if (token.kind as TKind) {
+function eat(kind: SK[]): Token<SK> {
+	if (kind.includes(token.kind)) {
 		let oldToken = token;
 		token = lexer.getNextToken();
 		return oldToken;
 	} else {
 		//TODO
-		return new MissingTokenObject<TKind>(token.kind, token.fullStart);
+		return new MissingTokenObject<SK>(kind[0], token.fullStart);
 	}
 }
 
+function eat1(kind: SK): Token<SK> {
+	if (kind === token.kind) {
+		let oldToken = token;
+		token = lexer.getNextToken();
+		return oldToken;
+	} else {
+		//TODO
+		return new MissingTokenObject<SK>(kind, token.fullStart);
+	}
+}
+
+function eatAny(): Token<SK> {
+	let oldToken = token;
+	token = lexer.getNextToken();
+	return oldToken;
+}
+
 	//https://github.com/microsoft/TypeScript/blob/master/src/compiler/parser.ts#L5701
-function parseStatements(parent: Node): Node {
+function parseStatements(parent: Node): NodeOrToken {
 	switch(token.kind) {
-		case SyntaxKind.SettingsKeyword: 
-		case SyntaxKind.MainKeyword: 
-		case SyntaxKind.LobbyKeyword: 
-		case SyntaxKind.ModesKeyword: 
-		case SyntaxKind.VariablesKeyword: 
-		case SyntaxKind.SubroutinesKeyword: 
-		case SyntaxKind.RuleKeyword: 
+		//TODO some way of keeping this in sync with the BlockHeader array?
+		case SK.SettingsKeyword: 
+		case SK.MainKeyword: 
+		case SK.LobbyKeyword: 
+		case SK.ModesKeyword: 
+		case SK.VariablesKeyword: 
+		case SK.SubroutinesKeyword: 
+		case SK.RuleKeyword: 
+		case SK.ActionsKeyword:
+		case SK.ConditionsKeyword:
+		case SK.EventKeyword:
 			return parseBlock(parent);
 	}
-	token = lexer.getNextToken();
-	return new TempNode();
+	return eatAny();
+}
+
+function parseList(parent: Node, endKind: SK): Node {
+	let n: ListNode = new ListNode();
+	while(tokenKind() !== endKind) {
+		n.children.push(parseStatements(n));
+	}
+	return n;
 }
 
 function parseStringLiteral(parent: Node): StringLiteralNode {
 	let n: StringLiteralNode = new StringLiteralNode();
 	n.parent = parent;
 
-	n.openQuote = eatType<SyntaxKind.DoubleQuoteToken>();
-	n.body = eat1(SyntaxKind.WORDS);
-	n.closeQuote = eatType<SyntaxKind.DoubleQuoteToken>();
+	n.openQuote = <Token<SK.DoubleQuoteToken>>eat1(SK.DoubleQuoteToken);
+	n.body = parseList(n, SK.DoubleQuoteToken);
+	n.closeQuote = <Token<SK.DoubleQuoteToken>>eat1(SK.DoubleQuoteToken);
 
 	return n;
 }
@@ -95,9 +105,10 @@ function parseRuleHeader(parent: Node): RuleHeaderNode {
 	let n: RuleHeaderNode = new RuleHeaderNode();
 	n.parent = parent;
 
-	n.openParen = eatType<SyntaxKind.OpenParen>();
+	n.header = <Token<SK.RuleKeyword>>eat1(SK.RuleKeyword);
+	n.openParen = <Token<SK.OpenParen>>eat1(SK.OpenParen);
 	n.stringLiteral = parseStringLiteral(n);
-	n.closeParen = eatType<SyntaxKind.CloseParen>();
+	n.closeParen = <Token<SK.CloseParen>>eat1(SK.CloseParen);
 
 	return n;
 }
@@ -106,16 +117,16 @@ function parseBlock(parent: Node): Node {
 	let bn: BlockNode = new BlockNode();
 
 	bn.parent = parent;
-	if(tokenKind() === SyntaxKind.RuleKeyword) {
+	if(tokenKind() === SK.RuleKeyword) {
 		bn.header = parseRuleHeader(parent);
 	} else {
-		if(tokenKind() as BlockHeader) {
-			bn.header = eatType<BlockHeader>();
+		if(BlockHeader.includes(tokenKind())) {
+			bn.header = eat(BlockHeader);
 		}
 	}
-	bn.openBrace = eat(SyntaxKind.OpenBrace);
-	bn.body = parseStatements(bn);
-	bn.closeBrace = eat(SyntaxKind.OpenBrace);
+	bn.openBrace = <Token<SK.OpenBrace>>eat1(SK.OpenBrace);
+	bn.body = parseList(bn, SK.CloseBrace);
+	bn.closeBrace = <Token<SK.CloseBrace>>eat1(SK.CloseBrace);
 
 	return bn;
 }
