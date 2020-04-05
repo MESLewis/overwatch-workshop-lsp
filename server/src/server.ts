@@ -38,7 +38,8 @@ import {
 	generateSemanticTokens
 } from './overwatch-script'
 import { SemanticTokensBuilder } from 'vscode-languageserver/lib/sematicTokens.proposed';
-import { parse, WorkshopDocument } from './parser';
+import { parse } from './parser';
+import { Node } from './Node'
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -239,7 +240,7 @@ documents.onDidClose(e => {
 documents.onDidChangeContent(change => {
 
 	connection.console.log("Starting parsing");
-	let wdoc: WorkshopDocument = parse(change.document.getText());
+	let wdoc: Node = parse(change.document.getText());
 	console.log(wdoc);
 	connection.console.log("Finished parsing");
 
