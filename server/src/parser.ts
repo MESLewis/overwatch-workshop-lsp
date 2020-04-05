@@ -3,6 +3,7 @@ import {
 } from './Node'
 
 import { Lexer, Token, SK, MissingTokenObject, BlockHeader } from './lexer';
+import { actionKw } from './languageData/actions';
 
 enum Context {
 	ROOT, //Outside of all blocks and scopes
@@ -80,6 +81,10 @@ function parseStatements(parent: Node): NodeOrToken {
 			return parseBlock(parent);
 	}
 	return eatAny();
+}
+
+function parseFunction(parent: Node): Node {
+//TODO load function data once from actions.ts etc and use that as lookup table
 }
 
 function parseList(parent: Node, endKind: SK): Node {

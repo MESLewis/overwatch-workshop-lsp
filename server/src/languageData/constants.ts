@@ -15,8 +15,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-const constantValues = 
-//begin-json
+import { heroKw } from './heroes';
+
+export const constantValues = 
 {
     "Transform": {
         "ROTATION": {
@@ -888,19 +889,18 @@ const constantValues =
         }
     }
 }
-//end-json
 
-constantValues["Hero"] = {};
-for (var key of Object.keys(heroKw)) {
-    constantValues["Hero"][camelCaseToUpperCase(key)] = heroKw[key]
-}
-constantValues["Map"] = {};
-for (var key of Object.keys(mapKw)) {
-    constantValues["Map"][camelCaseToUpperCase(key)] = mapKw[key]
-}
-constantValues["Gamemode"] = {};
-for (var key of Object.keys(gamemodeKw)) {
-    constantValues["Gamemode"][camelCaseToUpperCase(key)] = gamemodeKw[key]
-}
+// constantValues["Hero"] = {};
+// for (var key of Object.keys(heroKw)) {
+//     constantValues["Hero"][camelCaseToUpperCase(key)] = heroKw[key]
+// }
+// constantValues["Map"] = {};
+// for (var key of Object.keys(mapKw)) {
+//     constantValues["Map"][camelCaseToUpperCase(key)] = mapKw[key]
+// }
+// constantValues["Gamemode"] = {};
+// for (var key of Object.keys(gamemodeKw)) {
+//     constantValues["Gamemode"][camelCaseToUpperCase(key)] = gamemodeKw[key]
+// }
 
-constantValues["ChaseReeval"] = Object.assign({}, constantValues["_ChaseRateReeval"], constantValues["_ChaseTimeReeval"])
+// constantValues["ChaseReeval"] = Object.assign({}, constantValues["_ChaseRateReeval"], constantValues["_ChaseTimeReeval"])

@@ -2975,9 +2975,9 @@ for (var key of Object.keys(surroundStrKw)) {
 }
 
 //heroes
-for (var key of Object.keys(heroKw)) {
-	strTokens.push(key.toLowerCase());
-}
+// for (var key of Object.keys(heroKw)) {
+	// strTokens.push(key.toLowerCase());
+// }
 
 //Sort reverse alphabetical order for greediness
 strTokens = strTokens.sort().reverse();

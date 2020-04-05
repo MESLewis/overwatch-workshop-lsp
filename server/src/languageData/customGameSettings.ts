@@ -15,12 +15,17 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-"use strict";
+ import {
+     OwwSettings
+ } from '../overwatch-script'
 
-const customGameSettingsSchema = 
-//begin-json
+ import {
+     heroKw
+ } from './heroes'
+
+export const customGameSettingsSchema: OwwSettings = 
 {
-    "main": {
+    main: {
         "values": {
             "description": {
                 "guid": "00000001007F",
@@ -97,7 +102,7 @@ const customGameSettingsSchema =
                 "default": "yes",
                 "enUS": "Swap Teams After Match",
             },
-            "team1Slots": {
+            team1Slots: {
                 "guid": "000000005A91",
                 "values": "_int",
                 "min": 0,
@@ -105,7 +110,7 @@ const customGameSettingsSchema =
                 "default": 6,
                 "enUS": "Max %1$s Players",
             },
-            "team2Slots": {
+            team2Slots: {
                 "guid": "000000005A91",
                 "values": "_int",
                 "min": 0,
@@ -113,7 +118,7 @@ const customGameSettingsSchema =
                 "default": 6,
                 "enUS": "Max %1$s Players",
             },
-            "ffaSlots": {
+            ffaSlots: {
                 "guid": "000000006ABB",
                 "values": "_int",
                 "min": 0,
@@ -121,7 +126,7 @@ const customGameSettingsSchema =
                 "default": 12,
                 "enUS": "Max FFA Players",
             },
-            "spectatorSlots": {
+            spectatorSlots: {
                 "values": "_int",
                 "min": 0,
                 "max": 12,
@@ -1725,9 +1730,9 @@ const customGameSettingsSchema =
         "enUS": "heroes",
     }
 }
-//end-json
 
-const availableLanguages = ["de-DE", "enUS", "es-ES", "es-MX", "fr-FR", "it-IT", "ja-JP", "ko-KR", "pl-PL", "pt-BR", "ru-RU", "zh-CN", "zh-TW"];
+/*
+const availableLanguages = ["enUS"];
 
 //Resolve guids for the max team players
 for (var key of Object.keys(customGameSettingsSchema.lobby.values.team1Slots)) {
@@ -1813,3 +1818,4 @@ for (var hero of Object.keys(heroKw)) {
 delete customGameSettingsSchema.heroes.values._generalAndEachHero
 delete customGameSettingsSchema.heroes.values._eachHero
 delete customGameSettingsSchema.heroes.values._generalButNotEachHero
+*/

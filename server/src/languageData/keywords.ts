@@ -15,11 +15,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-"use strict";
+import {
+  OwwKeywords
+} from '../overwatch-script'
 
-const customGameSettingsKw =
-//begin-json
-{
+export const customGameSettingsKw: OwwKeywords[] =
+[
   {
         "guid": "0000000058E0",
         "enUS": "On",
@@ -44,12 +45,10 @@ const customGameSettingsKw =
         "guid": "0000000058F4",
         "enUS": "No",
     }
-}
-//end-json
+];
 
-const ruleKw = 
-//begin-json
-{
+export const ruleKw: OwwKeywords[] = 
+[
   {
         "guid": "00000000C7B4",
         "enUS": "rule",
@@ -90,13 +89,11 @@ const ruleKw =
         "guid": "000000010030",
         "enUS": "settings",
     }
-}
-//end-json
+]
 
 //Event keywords
-const eventKw = 
-//begin-json
-{
+export const eventKw: OwwKeywords[] = 
+[
   {
         "guid": "000000007895",
         "enUS": "Ongoing - Global",
@@ -145,12 +142,10 @@ const eventKw =
         "guid": "00000000FFF6",
         "enUS": "Subroutine",
     }
-}
-//end-json
+]
 
-const eventTeamKw = 
-//begin-json
-{
+export const eventTeamKw: OwwKeywords[] = 
+[
   {
         "guid": "000000004672",
         "enUS": "Team 1",
@@ -163,43 +158,38 @@ const eventTeamKw =
         "guid": "000000007804",
         "enUS": "All",
     }
-}
-//end-json
+]
 
-const slotKw = 
-//begin-json
+const slotKw: OwwKeywords = 
 {
     "guid": "00000000C231",
     "enUS": "Slot %1$s",
 }
-//end-json
-const eventSlotKw = {}
+
+
+export const eventSlotKw: OwwKeywords[] = []
+
 for (var i = 0; i < 12; i++) {
-    eventSlotKw[i] = Object.assign({}, slotKw)
-    for (var key of Object.keys(eventSlotKw[i])) {
-        eventSlotKw[i][key] = eventSlotKw[i][key].replace("%1$s", i);
-    }
+  eventSlotKw.push({"guid": "00000", "enUS": "Slot "+i})
 }
 
-const eventPlayerKw = 
-//begin-json
-{
-  {
-        "guid": "0000000077FE",
-        "enUS": "All",
-    }
-}
-//end-json
-Object.assign(eventPlayerKw, eventSlotKw, heroKw);
+// const eventPlayerKw: OwwKeywords[] = 
+// [
+//     {
+//       "guid": "0000000077FE",
+//       "enUS": "All",
+//     }
+// ]
+// Object.assign(eventPlayerKw, eventSlotKw, heroKw);
 
-var constantKw = {};
-for (var constant of Object.keys(constantValues)) {
-    for (var value of Object.keys(constantValues[constant])) {
-        constantKw[constant+"."+value] = constantValues[constant][value];
-    }
-}
+// var constantKw = {};
+// for (var constant of Object.keys(constantValues)) {
+//     for (var value of Object.keys(constantValues[constant])) {
+//         constantKw[constant+"."+value] = constantValues[constant][value];
+//     }
+// }
 
-//A value is defined as a function that returns a value (eg: "Has Spawned"), or a constant (number, vector, hero...)
-const valueKw = Object.assign({}, valueFuncKw, constantKw);
+// //A value is defined as a function that returns a value (eg: "Has Spawned"), or a constant (number, vector, hero...)
+// const valueKw = Object.assign({}, valueFuncKw, constantKw);
 
-const funcKw = Object.assign({}, actionKw, valueFuncKw);
+// const funcKw = Object.assign({}, actionKw, valueFuncKw);

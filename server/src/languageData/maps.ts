@@ -15,11 +15,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-"use strict";
 
-const mapKw = 
-//begin-json
-{
+export const mapKw = 
+[
   {
         "guid": "00000000676E",
         "gamemodes": [
@@ -590,5 +588,4 @@ const mapKw =
         "guid": "00000000FFF1",
         "enUS": "Workshop Island",
     }
-}
-//end-json
+]

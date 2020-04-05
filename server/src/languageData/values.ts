@@ -15,9 +15,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var valueFuncKw = 
-//begin-json
-{
+import {
+    OwwActions,
+    OwwArgs
+} from '../overwatch-script'
+
+export const valueFuncKw: OwwActions[] = 
+[
   {
         "description": "The absolute value of the specified value.",
         "args": [
@@ -378,13 +382,11 @@ var valueFuncKw =
   {
         "guid": "00000000B32F",
         "description": "The player that dealt the damage for the event currently being processed by this rule. May be the same as the victim or the event player.",
-        "args": null,
         "enUS": "Attacker",
     },
   {
         "guid": "00000000B11B",
         "description": "Shorthand for the directional vector(0, 0, -1), which points backward.",
-        "args": null,
         "enUS": "Backward",
     },
   {
@@ -655,7 +657,6 @@ var valueFuncKw =
   {
         "guid": "00000000B119",
         "description": "Shorthand for the directional vector(0, -1, 0), which points downward.",
-        "args": null,
         "enUS": "Down",
     },
   {
@@ -679,31 +680,26 @@ var valueFuncKw =
     },
   {
         "description": "The amount of damage received by the victim for the event currently being processed by this rule.",
-        "args": null,
         "guid": "00000000C635",
         "enUS": "Event Damage",
     },
   {
         "description": "The amount of healing received by the healee for the event currently being processed by this rule.",
-        "args": null,
         "guid": "00000000CC33",
         "enUS": "Event Healing",
     },
   {
         "description": "The player executing this rule, as specified by the event. May be the same as the attacker or victim.",
-        "args": null,
         "guid": "00000000B331",
         "enUS": "Event Player",
     },
   {
         "description": "Whether the damage was a critical hit (such as a headshot) for the event currently being processed by this rule.",
-        "args": null,
         "guid": "00000000C637",
         "enUS": "Event Was Critical Hit",
     },
   {
         "description": "Whether the healing was a health pack for the event currently being processed by this rule.",
-        "args": null,
         "guid": "00000000FC80",
         "enUS": "Event Was Health Pack",
     },
@@ -735,7 +731,6 @@ var valueFuncKw =
     },
   {
         "description": "The boolean value of false.",
-        "args": null,
         "guid": "00000000AC3A",
         "enUS": "False",
     },
@@ -806,7 +801,6 @@ var valueFuncKw =
   {
         "guid": "00000000B11A",
         "description": "Shorthand for the directional vector(0, 0, 1), which points forward.",
-        "args": null,
         "enUS": "Forward",
     },
   {
@@ -856,14 +850,12 @@ var valueFuncKw =
     },
   {
         "description": "The player that received the healing for the event currently being processed by this rule. May be the same as the healer or the event player.",
-        "args": null,
         "guid": "00000000CC1C",
         "enUS": "Healee",
     },
   {
         "guid": "00000000CC1A",
         "description": "The player that dealt the healing for the event currently being processed by this rule. May be the same as the healee or the event player.",
-        "args": null,
         "enUS": "Healer",
     },
   {
@@ -1004,7 +996,6 @@ var valueFuncKw =
     },
   {
         "description": "The player that is currently the host of the custom game. This value will change if the current host player leaves the match.",
-        "args": null,
         "guid": "00000000CC1E",
         "enUS": "Host Player",
     },
@@ -1610,7 +1601,6 @@ var valueFuncKw =
   {
         "guid": "00000000B116",
         "description": "Shorthand for the directional vector(1, 0, 0), which points to the left.",
-        "args": null,
         "enUS": "Left",
     },
   {
@@ -1793,7 +1783,6 @@ var valueFuncKw =
     },
   {
         "description": "The absence of a player. Used when no player is desired for a particular input. Equivalent to the real number 0 for the purposes of comparison and debugging.",
-        "args": null,
         "guid": "00000000B594",
         "enUS": "Null",
     },
@@ -2350,7 +2339,6 @@ var valueFuncKw =
   {
         "guid": "00000000B117",
         "description": "Shorthand for the directional vector(-1, 0, 0), which points to the right.",
-        "args": null,
         "enUS": "Right",
     },
   {
@@ -2629,7 +2617,6 @@ var valueFuncKw =
     },
   {
         "description": "The boolean value of true.",
-        "args": null,
         "guid": "00000000AC39",
         "enUS": "True",
     },
@@ -2649,7 +2636,6 @@ var valueFuncKw =
   {
         "guid": "00000000B118",
         "description": "Shorthand for the directional vector(0, l, 0), which points upward.",
-        "args": null,
         "enUS": "Up",
     },
   {
@@ -2789,7 +2775,6 @@ var valueFuncKw =
   {
         "guid": "00000000B330",
         "description": "The player that received the damage for the event currently being processed by this rule. May be the same as the attacker or the event player.",
-        "args": null,
         "enUS": "Victim",
     },
   {
@@ -2856,5 +2841,4 @@ var valueFuncKw =
         "guid": "00000000B272",
         "enUS": "Z Component Of",
     }
-}
-//end-json
+]
