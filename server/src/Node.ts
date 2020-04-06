@@ -3,6 +3,10 @@ import { lexer } from './parser'
 
 export type NodeOrToken = Node | Token<SK>;
 
+export function isToken(nodeOrToken: NodeOrToken): nodeOrToken is Token<SK> {
+	return (nodeOrToken as Token<SK>).fullStart !== undefined;
+}
+
 export abstract class Node {
 	[key: string]: any;
 	parent: Node | undefined;
@@ -65,6 +69,22 @@ export class BlockNode extends Node {
 	openBrace!: Token<SK.OpenBrace>;
 	body!: Node;
 	closeBrace!: Token<SK.CloseBrace>;
+}
+
+export class FunctionNode extends Node {
+	header!: NodeOrToken;
+	openParen!: Token<SK.OpenParen>;
+	args!: NodeOrToken[];
+	closeParen!: Token<SK.CloseParen>;
+}
+
+export class ArgumentNode extends Node {
+	arg!: NodeOrToken;
+	comma?: Token<SK.CommaToken>;
+}
+
+export class DisabledNode extends Node {
+	disabled!: Token<SK.DisabledKeyword>;
 }
 
 /**

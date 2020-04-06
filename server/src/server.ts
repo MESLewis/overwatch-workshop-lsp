@@ -39,7 +39,8 @@ import {
 } from './overwatch-script'
 import { SemanticTokensBuilder } from 'vscode-languageserver/lib/sematicTokens.proposed';
 import { parse } from './parser';
-import { Node } from './Node'
+import { Node, isToken } from './Node'
+import { SK } from './lexer';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -127,6 +128,15 @@ const legend: SemanticTokensLegend = {
 	tokenModifiers: [ 'declaration', 'documentation', 'readonly', 'static', 'abstract', 'deprecated', 'modification', 'async' ]
 }
 
+function SKToSemanticLegend(sk: SK): number | undefined {
+	switch(sk) {
+		case SK.ActionsKeyword:
+			return legend.tokenTypes.indexOf('keyword');
+		default:
+			return undefined;
+	}
+}
+
 // function computeLegend(capability: Proposed.SemanticTokensClientCapabilities): Proposed.SemanticTokensLegend {
 // 	const clientTokenTypes = new Set<string>(capability?.textDocument?.semanticTokens?.tokenTypes);
 // 	const clientTokenModifiers = new Set<string>(capability?.textDocument?.semanticTokens?.tokenModifiers);
@@ -153,26 +163,26 @@ const legend: SemanticTokensLegend = {
 // 	return { tokenTypes, tokenModifiers };
 // }
 
-function buildTokens(builder: SemanticTokensBuilder, document: TextDocument) {
-	const text = document.getText();
-	const regexp = /\w+/g;
-	let match: RegExpMatchArray | null;
-	let tokenCounter: number = 0;
-	let modifierCounter: number = 0;
+function buildTokens(node: Node, builder: SemanticTokensBuilder, document: TextDocument) {
+	if(node.allNodeAndToken === undefined) {
+		return;
+	}
 
-	match = regexp.exec(text);
-	if (match !== null) {
-		for (let entry of match) {
-			const word = match[0];
-			const position = document.positionAt((match.index !== undefined) ? match.index : 0);
-			const tokenType = tokenCounter % legend.tokenTypes.length;
-			const tokenModifier = 1 << modifierCounter % legend.tokenModifiers.length;
-			builder.push(position.line, position.character, word.length, tokenType, tokenModifier);
-			tokenCounter++;
-			modifierCounter++;
+	for (let entry of node.allNodeAndToken) {
+		if(isToken(entry)) {
+			const tokenType = SKToSemanticLegend(entry.kind);
+			//Only push mapped types
+			if(tokenType !== undefined) {
+				const position = document.positionAt(entry.start);
+				const tokenModifier = 0;
+				builder.push(position.line, position.character, entry.length - (entry.start - entry.fullStart), tokenType, tokenModifier);
+			}
+		} else {
+			buildTokens(entry, builder, document);
 		}
 	}
 }
+
 
 connection.languages.semanticTokens.on((semanticTokensParams: SemanticTokensParams) => {
 	connection.console.log("Server is finding tokens");
@@ -183,7 +193,9 @@ connection.languages.semanticTokens.on((semanticTokensParams: SemanticTokensPara
 		}
 	}
 	const builder = getTokenBuilder(document);
-	buildTokens(builder, document);
+	//TODO store wdoc somewhere instead of recalculating
+	let wdoc: Node = parse(document.getText());
+	buildTokens(wdoc, builder, document);
 	return builder.build();
 });
 
@@ -212,7 +224,8 @@ connection.onDidChangeConfiguration(change => {
 	}
 
 	// Revalidate all open text documents
-	documents.all().forEach(validateTextDocument);
+	//TODO
+	// documents.all().forEach(validateTextDocument);
 });
 
 function getDocumentSettings(resource: string): Thenable<ExampleSettings> {
@@ -238,18 +251,15 @@ documents.onDidClose(e => {
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
-
 	connection.console.log("Starting parsing");
 	let wdoc: Node = parse(change.document.getText());
 	console.log(wdoc);
 	connection.console.log("Finished parsing");
 
-
-
-	validateTextDocument(change.document);
+	validateTextDocument(change.document, wdoc);
 });
 
-async function validateTextDocument(textDocument: TextDocument): Promise<void> {
+async function validateTextDocument(textDocument: TextDocument, rootNode: Node): Promise<void> {
 	// In this simple example we get the settings for every validate run.
 	let settings = await getDocumentSettings(textDocument.uri);
 
@@ -260,6 +270,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	let problems = 0;
 	let diagnostics: Diagnostic[] = [];
+
 	while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
 		problems++;
 		let diagnostic: Diagnostic = {

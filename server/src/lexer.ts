@@ -1,4 +1,5 @@
 import { lexer } from './parser';
+import { NodeOrToken } from './Node';
 
 const matcher: RegExp = /(?<leading>\s*)(?<content>(?:[\w\-%\d\.]|[\s](?![\s:"{}();,]))+|[:"{}();,]|[=><!]{1,2})/g
 
@@ -23,7 +24,6 @@ export const enum SK {
 	EventKeyword,
 	ConditionsKeyword,
 	ActionsKeyword,
-	WORDS, //All other words
 	NumberToken,
 	ArithmeticOperator,
 	EndOfFileToken,
@@ -98,12 +98,19 @@ export class MissingTokenObject<TKind> extends TokenObject<TKind> {
 
 export class Lexer {
 	private text: string;
+	private pushBackStack: Token<SK>[] = [];
 
 	constructor(text: string) {
 		this.text = text
 	}
 
 	public getNextToken(): Token<SK> {
+		if(this.pushBackStack.length > 0) {
+			let popped = this.pushBackStack.pop();
+			if(popped !== undefined) {
+				return popped;
+			}
+		}
 		let nextMatch: RegExpExecArray | null = matcher.exec(this.text);
 		if (nextMatch !== null) {
 			let nextToken: Token<any> = {
@@ -124,6 +131,10 @@ export class Lexer {
 			eofToken.debugText = "";
 			return eofToken;
 		}
+	}
+
+	public pushback(token: Token<SK>) {
+		this.pushBackStack.push(token);
 	}
 
 	private determineKind(match: RegExpMatchArray): SK {
