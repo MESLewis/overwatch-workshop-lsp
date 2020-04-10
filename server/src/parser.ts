@@ -1,10 +1,10 @@
 import {
-	Node, BlockNode, DocumentNode, RuleHeaderNode, StringLiteralNode, ListNode, NodeOrToken, FunctionNode, ArgumentNode, DisabledNode
-} from './Node'
+	Node, BlockNode, DocumentNode, RuleHeaderNode, ListNode, NodeOrToken, FunctionNode, ArgumentNode, DisabledNode, DefinitionNode, DefinitionListNode, SubroutineDefinitionListNode, VariableDefinitionListNode
+} from './Node';
 
 import { Lexer, Token, SK, MissingTokenObject, BlockHeader } from './lexer';
 
-enum Context {
+export enum Context {
 	root, //Outside of all blocks and scopes
 	settingsBlock,
 	variablesBlock,
@@ -16,7 +16,7 @@ enum Context {
 let token: Token<any> = new MissingTokenObject(SK.InvalidToken, 0);
 let currentContext: Context = Context.root;
 //Exporting this to be used in Node.toString(). Probably not the best but needed for visualizing.
-export let lexer: Lexer = new Lexer("");
+export let lexer: Lexer = new Lexer('');
 
 export function parse(text: string): Node {
 	currentContext = Context.root;
@@ -27,7 +27,7 @@ export function parse(text: string): Node {
 	while (token.kind !== SK.EndOfFileToken) {
 		documentNode.children.push(parseStatements(documentNode));
 	}
-	console.log(documentNode.toString());
+	// console.log(documentNode.toString());
 	return documentNode;
 }
 
@@ -70,7 +70,7 @@ function eatAny(): Token<SK> {
 	return oldToken;
 }
 
-	//https://github.com/microsoft/TypeScript/blob/master/src/compiler/parser.ts#L5701
+//https://github.com/microsoft/TypeScript/blob/master/src/compiler/parser.ts#L5701
 function parseStatements(parent: Node): NodeOrToken {
 	switch(token.kind) {
 		//TODO some way of keeping this in sync with the BlockHeader array?
@@ -87,15 +87,18 @@ function parseStatements(parent: Node): NodeOrToken {
 			return parseBlock(parent);
 		case SK.DisabledKeyword:
 			return parseDisabledKeyword(parent);
-		case SK.DoubleQuoteToken:
+		case SK.StringLiteralToken:
 			return parseStringLiteral(parent);
 		default:
 			if(currentContext === Context.actionsBlock) {
 				return parseFunction(parent);
 			}
-
 	}
 	return eatAny();
+}
+
+function parseStringLiteral(parent: Node): Token<SK.StringLiteralToken> {
+	return <Token<SK.StringLiteralToken>>eat1(SK.StringLiteralToken);
 }
 
 function parseDisabledKeyword(parent: Node): Node {
@@ -146,24 +149,13 @@ function parseList(parent: Node, endKind: SK): Node {
 	return n;
 }
 
-function parseStringLiteral(parent: Node): StringLiteralNode {
-	let n: StringLiteralNode = new StringLiteralNode();
-	n.parent = parent;
-
-	n.openQuote = <Token<SK.DoubleQuoteToken>>eat1(SK.DoubleQuoteToken);
-	n.body = parseList(n, SK.DoubleQuoteToken);
-	n.closeQuote = <Token<SK.DoubleQuoteToken>>eat1(SK.DoubleQuoteToken);
-
-	return n;
-}
-
 function parseRuleHeader(parent: Node): RuleHeaderNode {
 	let n: RuleHeaderNode = new RuleHeaderNode();
 	n.parent = parent;
 
 	n.header = <Token<SK.RuleKeyword>>eat1(SK.RuleKeyword);
 	n.openParen = <Token<SK.OpenParen>>eat1(SK.OpenParen);
-	n.stringLiteral = parseStringLiteral(n);
+	n.stringLiteral = <Token<SK.StringLiteralToken>>eat1(SK.StringLiteralToken);
 	n.closeParen = <Token<SK.CloseParen>>eat1(SK.CloseParen);
 
 	return n;
@@ -179,23 +171,87 @@ function parseBlock(parent: Node): Node {
 	} else {
 		if(tokenKind() === SK.ActionsKeyword) {
 			currentContext = Context.actionsBlock;
+		} else if(tokenKind() === SK.VariablesKeyword) {
+			currentContext = Context.variablesBlock;
+		} else if(tokenKind() === SK.SubroutinesKeyword) {
+			currentContext = Context.subroutinesBlock;
 		}
 		if(BlockHeader.includes(tokenKind())) {
 			bn.header = eat(BlockHeader);
 		}
 	}
 	bn.openBrace = <Token<SK.OpenBrace>>eat1(SK.OpenBrace);
-	bn.body = parseList(bn, SK.CloseBrace);
+
+	if(currentContext === Context.variablesBlock) {
+		bn.body = parseVariablesList(bn);
+	} else if(currentContext === Context.subroutinesBlock) {
+		bn.body = parseDefinitionList(bn, [SK.CloseBrace]);
+	} else {
+		bn.body = parseList(bn, SK.CloseBrace);
+	}
+
 	bn.closeBrace = <Token<SK.CloseBrace>>eat1(SK.CloseBrace);
 
 	switch(currentContext) {
-		case Context.actionsBlock:
-			currentContext = Context.ruleBlock;
-			break;
+		case Context.variablesBlock:
+		case Context.subroutinesBlock:
 		case Context.ruleBlock:
 			currentContext = Context.root;
+			break;
+		case Context.actionsBlock:
+			currentContext = Context.ruleBlock;
 			break;
 	}
 
 	return bn;
+}
+
+function parseVariablesList(parent: Node): Node {
+	let listNode: ListNode = new ListNode();
+	listNode.parent = parent;
+
+	while(tokenKind() !== SK.CloseBrace) {
+		if(tokenKind() === SK.GlobalKeyword) {
+			listNode.children.push(parseDefinitionList(listNode, [SK.CloseBrace, SK.PlayerKeyword]));
+		}
+		if(tokenKind() === SK.PlayerKeyword) {
+			listNode.children.push(parseDefinitionList(listNode, [SK.CloseBrace, SK.GlobalKeyword]));
+		}
+	}
+
+	return listNode;
+}
+
+function parseDefinitionList(parent: Node, endKind: SK[]): DefinitionListNode {
+	let dln: DefinitionListNode;
+	switch(currentContext) {
+		case Context.variablesBlock:
+			dln = new VariableDefinitionListNode();
+			(<VariableDefinitionListNode>dln).type = <Token<SK.GlobalKeyword>|Token<SK.PlayerKeyword>>eat([SK.GlobalKeyword, SK.PlayerKeyword]);
+			(<VariableDefinitionListNode>dln).typeColon = <Token<SK.ColonToken>>eat1(SK.ColonToken);
+			break;
+		case Context.subroutinesBlock:
+			dln = new SubroutineDefinitionListNode();
+			break;
+		default:
+			dln = new DefinitionListNode();
+			break;
+	}
+
+	while(!endKind.includes(tokenKind())) {
+		dln.definitions.push(parseDefinition(dln));
+	}
+
+	return dln;
+}
+
+function parseDefinition(parent: Node): DefinitionNode {
+	let dn: DefinitionNode = new DefinitionNode;
+	dn.parent = parent;
+
+	dn.id = <Token<SK.NumberToken>>eat1(SK.NumberToken);
+	dn.colon = <Token<SK.ColonToken>>eat1(SK.ColonToken);
+	dn.name = <Token<SK.WordToken>>eat1(SK.WordToken);
+
+	return dn;
 }

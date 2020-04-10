@@ -1,7 +1,7 @@
-import { lexer } from './parser';
 import { NodeOrToken } from './Node';
+import { Context } from './parser';
 
-const matcher: RegExp = /(?<leading>\s*)(?<content>(?:[\w\-%\d\.]|[\s](?![\s:"{}();,]))+|[:"{}();,]|[=><!]{1,2})/g
+const matcher: RegExp = /(?<leading>\s*)(?<content>(?:[\w\-%\d\.]|[\s](?![\s:'{}();,]))+|[:'{}();,]|[=><!]{1,2}|".*")/g;
 
 export const enum SK {
 	Unknown,
@@ -12,13 +12,15 @@ export const enum SK {
 	ColonToken,
 	SemicolonToken,
 	CommaToken,
-	DoubleQuoteToken,
+	StringLiteralToken,
 	DisabledKeyword,
 	SettingsKeyword,
 	MainKeyword,
 	LobbyKeyword,
 	ModesKeyword,
 	VariablesKeyword,
+	GlobalKeyword,
+	PlayerKeyword,
 	SubroutinesKeyword,
 	RuleKeyword,
 	EventKeyword,
@@ -26,6 +28,7 @@ export const enum SK {
 	ActionsKeyword,
 	NumberToken,
 	ArithmeticOperator,
+	WordToken,
 	EndOfFileToken,
 	InvalidToken
 }
@@ -43,28 +46,32 @@ export const BlockHeader = [
 	SK.ActionsKeyword,
 ];
 
+//I guess I'm parsing everything twice doing it this way? Probably not efficient.
 const kindStrings: [SK, string | RegExp][] = [
-	[SK.OpenBrace, 			"{"],
-	[SK.CloseBrace, 			"}"],
-	[SK.OpenParen, 			"("],
-	[SK.CloseParen, 			")"],
-	[SK.ColonToken, 				":"],
-	[SK.SemicolonToken, 			";"],
-	[SK.CommaToken, 				","],
-	[SK.DoubleQuoteToken,			"\""],
-	[SK.DisabledKeyword,			"disabled"],
-	[SK.SettingsKeyword,			"settings"],
-	[SK.MainKeyword,			"main"],
-	[SK.LobbyKeyword,			"lobby"],
-	[SK.ModesKeyword,			"modes"],
-	[SK.VariablesKeyword,			"variables"],
-	[SK.SubroutinesKeyword,			"subroutines"],
-	[SK.RuleKeyword,			"rule"],
-	[SK.EventKeyword,			"event"],
-	[SK.ConditionsKeyword,			"conditions"],
-	[SK.ActionsKeyword,			"actions"],
-	[SK.NumberToken, 				new RegExp("\\d")],
-	[SK.ArithmeticOperator, 	new RegExp("[=><!]{1,2}")],
+	[SK.OpenBrace, 			'{'],
+	[SK.CloseBrace, 			'}'],
+	[SK.OpenParen, 			'('],
+	[SK.CloseParen, 			')'],
+	[SK.ColonToken, 				':'],
+	[SK.SemicolonToken, 			';'],
+	[SK.CommaToken, 				','],
+	[SK.StringLiteralToken,			new RegExp('^".*"$')],
+	[SK.DisabledKeyword,			'disabled'],
+	[SK.SettingsKeyword,			'settings'],
+	[SK.MainKeyword,			'main'],
+	[SK.LobbyKeyword,			'lobby'],
+	[SK.ModesKeyword,			'modes'],
+	[SK.VariablesKeyword,			'variables'],
+	[SK.GlobalKeyword,			'global'],
+	[SK.PlayerKeyword,			'player'],
+	[SK.SubroutinesKeyword,			'subroutines'],
+	[SK.RuleKeyword,			'rule'],
+	[SK.EventKeyword,			'event'],
+	[SK.ConditionsKeyword,			'conditions'],
+	[SK.ActionsKeyword,			'actions'],
+	[SK.WordToken,				new RegExp('^[a-zA-z]\\w+$')],
+	[SK.NumberToken, 				new RegExp('^-?[0-9]{1,}(\.[0-9]+)?$')],
+	[SK.ArithmeticOperator, 	new RegExp('^[=><!]{1,2}$')],
 ];
 
 export interface Token<TKind> {
@@ -98,19 +105,13 @@ export class MissingTokenObject<TKind> extends TokenObject<TKind> {
 
 export class Lexer {
 	private text: string;
-	private pushBackStack: Token<SK>[] = [];
+	// private context: Context = Context.root;
 
 	constructor(text: string) {
-		this.text = text
+		this.text = text;
 	}
 
 	public getNextToken(): Token<SK> {
-		if(this.pushBackStack.length > 0) {
-			let popped = this.pushBackStack.pop();
-			if(popped !== undefined) {
-				return popped;
-			}
-		}
 		let nextMatch: RegExpExecArray | null = matcher.exec(this.text);
 		if (nextMatch !== null) {
 			let nextToken: Token<any> = {
@@ -118,8 +119,8 @@ export class Lexer {
 				fullStart: nextMatch.index,
 				start: nextMatch.index + (nextMatch.groups?.leading.length || 0),
 				length: nextMatch[0].length
-			}
-			nextToken.debugText = lexer.getTextForToken(nextToken);
+			};
+			nextToken.debugText = this.getTextForToken(nextToken);
 			return nextToken;
 		} else {
 			let eofToken: Token<any> = {
@@ -127,14 +128,10 @@ export class Lexer {
 				fullStart: 0,
 				start: 0,
 				length: 1
-			}
-			eofToken.debugText = "";
+			};
+			eofToken.debugText = '';
 			return eofToken;
 		}
-	}
-
-	public pushback(token: Token<SK>) {
-		this.pushBackStack.push(token);
 	}
 
 	private determineKind(match: RegExpMatchArray): SK {
@@ -145,23 +142,19 @@ export class Lexer {
 		let length = match.groups?.content.length || 0;
 		let content = this.text.slice(start, start + length);
 
-		let retKind = SK.InvalidToken;
-
-		kindStrings.forEach((match: [SK, string | RegExp], index: number, array: [SK, string | RegExp][]) => {
-			if((match[1] as RegExp).test) {
-				if((match[1] as RegExp).test(content)) {
-					retKind = match[0];
-					return;
+		for(let i = 0; i < kindStrings.length; i++) {
+			let kindTest: [SK, string | RegExp] = kindStrings[i];
+			if((kindTest[1] as RegExp).test) {
+				if((kindTest[1] as RegExp).test(content)) {
+					return kindTest[0];
 				}
 			} else {
-				if((match[1] as string).indexOf(content) == 0) {
-					retKind = match[0];
-					return;
+				if((kindTest[1] as string).indexOf(content) === 0) {
+					return kindTest[0];
 				}
 			}
-		});
-		
-		return retKind;
+		}
+		return SK.Unknown;
 	}
 
 	/**

@@ -1,5 +1,5 @@
 import { Token, SK, Lexer, TokenObject } from './lexer';
-import { lexer } from './parser'
+import { lexer } from './parser';
 
 export type NodeOrToken = Node | Token<SK>;
 
@@ -19,7 +19,7 @@ export abstract class Node {
 			let key: string = pair[0];
 			let value: NodeOrToken = pair[1];
 
-			if(key !== "children" && key !== "parent") {
+			if(key !== 'children' && key !== 'parent') {
 				all.push(value);
 			}
 		}
@@ -32,14 +32,18 @@ export abstract class Node {
 	}
 
 	toStringIndent(indent: number): string {
-		let retString = "";
-		let indentString = "\t".repeat(indent);
+		let retString = '';
+		let indentString = '\t'.repeat(indent);
 		for (const iterator of this.allNodeAndToken) {
 			if(iterator instanceof Node) {
 				retString += indentString + '\n';
 				retString += indentString + '>$$' + iterator.constructor.name + '\n';
 				retString += indentString + iterator.toStringIndent(indent + 1) + '\n';
 				retString += indentString + '<$$' + iterator.constructor.name + '\n';
+			} else if(iterator instanceof Array) {
+				for (const iterator2 of iterator) {
+					retString += iterator2.toStringIndent(indent);
+				}
 			} else if(iterator !== undefined) {
 				retString += iterator?.debugText;
 			}
@@ -49,18 +53,15 @@ export abstract class Node {
 }
 
 export class DocumentNode extends Node {
-}
-
-export class StringLiteralNode extends Node {
-	openQuote!: Token<SK.DoubleQuoteToken>;
-	body!: NodeOrToken;
-	closeQuote!: Token<SK.DoubleQuoteToken>;
+	globalVariables?: VariableDefinitionListNode;
+	playerVariables?: VariableDefinitionListNode;
+	subroutines?: SubroutineDefinitionListNode;
 }
 
 export class RuleHeaderNode extends Node {
 	header!: Token<SK.RuleKeyword>;
 	openParen!: Token<SK.OpenParen>;
-	stringLiteral!: StringLiteralNode;
+	stringLiteral!: Token<SK.StringLiteralToken>;
 	closeParen!: Token<SK.CloseParen>;
 }
 
@@ -91,4 +92,23 @@ export class DisabledNode extends Node {
  * Holds a list of expressions
  */
 export class ListNode extends Node {
+}
+
+export class DefinitionNode extends Node {
+	id!: Token<SK.NumberToken>;
+	colon!: Token<SK.ColonToken>;
+	name!: Token<SK.WordToken>;
+}
+
+export class DefinitionListNode extends Node {
+	definitions: DefinitionNode[] = [];
+}
+
+export class VariableDefinitionListNode extends DefinitionListNode {
+	type!: Token<SK.GlobalKeyword> | Token<SK.PlayerKeyword>;
+	typeColon!: Token<SK.ColonToken>;
+}
+
+export class SubroutineDefinitionListNode extends DefinitionListNode {
+
 }

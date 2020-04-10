@@ -27,7 +27,7 @@ import {
 	SemanticTokensLegend,
 	SemanticTokensServerCapabilities,
 	SemanticTokensClientCapabilities
-} from 'vscode-languageserver-protocol/lib/protocol.sematicTokens.proposed'
+} from 'vscode-languageserver-protocol/lib/protocol.sematicTokens.proposed';
 
 import {
 	TextDocument
@@ -36,10 +36,10 @@ import {
 import {
 	generateCompletionItems,
 	generateSemanticTokens
-} from './overwatch-script'
+} from './overwatch-script';
 import { SemanticTokensBuilder } from 'vscode-languageserver/lib/sematicTokens.proposed';
 import { parse } from './parser';
-import { Node, isToken } from './Node'
+import { Node, isToken } from './Node';
 import { SK } from './lexer';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -126,7 +126,7 @@ const legend: SemanticTokensLegend = {
 		'type', 'struct', 'class', 'interface', 'enum', 'typeParameter', 'function',
 		'member', 'macro', 'variable', 'parameter', 'property', 'label' ],
 	tokenModifiers: [ 'declaration', 'documentation', 'readonly', 'static', 'abstract', 'deprecated', 'modification', 'async' ]
-}
+};
 
 function SKToSemanticLegend(sk: SK): number | undefined {
 	switch(sk) {
@@ -185,12 +185,12 @@ function buildTokens(node: Node, builder: SemanticTokensBuilder, document: TextD
 
 
 connection.languages.semanticTokens.on((semanticTokensParams: SemanticTokensParams) => {
-	connection.console.log("Server is finding tokens");
+	connection.console.log('Server is finding tokens');
 	const document = documents.get(semanticTokensParams.textDocument.uri);
 	if (document === undefined) {
 		return {
 			data: []
-		}
+		};
 	}
 	const builder = getTokenBuilder(document);
 	//TODO store wdoc somewhere instead of recalculating
@@ -251,10 +251,10 @@ documents.onDidClose(e => {
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
-	connection.console.log("Starting parsing");
+	connection.console.log('Starting parsing');
 	let wdoc: Node = parse(change.document.getText());
 	console.log(wdoc);
-	connection.console.log("Finished parsing");
+	connection.console.log('Finished parsing');
 
 	validateTextDocument(change.document, wdoc);
 });

@@ -2,7 +2,7 @@ import {
 	CompletionItem,
 	CompletionItemKind,
 	TextDocumentPositionParams
-} from 'vscode-languageserver'
+} from 'vscode-languageserver';
 
 import {
 	actionKw
