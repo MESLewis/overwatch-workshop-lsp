@@ -1,1 +1,0 @@
-C:/Users/MESLe/Documents/Programming/vscode/src/vs/vscode.d.ts
