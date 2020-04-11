@@ -1,5 +1,4 @@
 import { Token, SK, Lexer, TokenObject } from './lexer';
-import { lexer } from './parser';
 
 export type NodeOrToken = Node | Token<SK>;
 
@@ -15,12 +14,12 @@ export abstract class Node {
 	get allNodeAndToken(): NodeOrToken[] {
 		let all: NodeOrToken[] = this.children;
 
-		for (let pair of Object.entries<NodeOrToken>(this)) {
+		for (let pair of Object.entries<NodeOrToken | NodeOrToken[]>(this)) {
 			let key: string = pair[0];
-			let value: NodeOrToken = pair[1];
+			let value: NodeOrToken | NodeOrToken[] = pair[1];
 
 			if(key !== 'children' && key !== 'parent') {
-				all.push(value);
+				all = all.concat(value);
 			}
 		}
 
@@ -53,9 +52,12 @@ export abstract class Node {
 }
 
 export class DocumentNode extends Node {
-	globalVariables?: VariableDefinitionListNode;
-	playerVariables?: VariableDefinitionListNode;
-	subroutines?: SubroutineDefinitionListNode;
+	readonly lexer: Lexer;
+
+	constructor(lexer: Lexer) {
+		super();
+		this.lexer = lexer;
+	}
 }
 
 export class RuleHeaderNode extends Node {

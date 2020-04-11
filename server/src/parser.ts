@@ -18,12 +18,12 @@ let currentContext: Context = Context.root;
 //Exporting this to be used in Node.toString(). Probably not the best but needed for visualizing.
 export let lexer: Lexer = new Lexer('');
 
-export function parse(text: string): Node {
+export function parse(text: string): DocumentNode {
 	currentContext = Context.root;
 	lexer = new Lexer(text);
 	token = lexer.getNextToken();
 
-	let documentNode: Node = new DocumentNode();
+	let documentNode: DocumentNode = new DocumentNode(lexer);
 	while (token.kind !== SK.EndOfFileToken) {
 		documentNode.children.push(parseStatements(documentNode));
 	}

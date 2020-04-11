@@ -37,17 +37,16 @@ import {
 	generateCompletionItems,
 	generateSemanticTokens
 } from './overwatch-script';
-import { SemanticTokensBuilder } from 'vscode-languageserver/lib/sematicTokens.proposed';
 import { parse } from './parser';
-import { Node, isToken } from './Node';
-import { SK } from './lexer';
+import { Node, isToken, DefinitionNode, DocumentNode } from './Node';
+import { SK, Token, Lexer, getTextForToken } from './lexer';
+import { SemanticTokensBuilder } from 'vscode-languageserver/lib/sematicTokens.proposed';
+import { getPlayerVariables, getGlobalVariables, getSubroutineNames } from './services/documentVariables';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 let connection = createConnection(ProposedFeatures.all);
 
-// Create a simple text document manager. The text document manager
-// supports full document sync only
 let documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
 let hasConfigurationCapability: boolean = false;
@@ -75,7 +74,7 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities: {
 			textDocumentSync: {
 				openClose: true,
-				change: 2
+				change: TextDocumentSyncKind.Incremental
 			},
 			// Tell the client that the server supports code completion
 			completionProvider: {
@@ -129,48 +128,33 @@ const legend: SemanticTokensLegend = {
 };
 
 function SKToSemanticLegend(sk: SK): number | undefined {
+	//TODO probably base this on Nodes more than tokens. But its really only needed for defined variables
 	switch(sk) {
-		case SK.ActionsKeyword:
-			return legend.tokenTypes.indexOf('keyword');
+		// case SK.ActionsKeyword:
+			// return legend.tokenTypes.indexOf('keyword');
+		// case SK.StringLiteralToken:
+			// return legend.tokenTypes.indexOf('string');
 		default:
 			return undefined;
 	}
 }
 
-// function computeLegend(capability: Proposed.SemanticTokensClientCapabilities): Proposed.SemanticTokensLegend {
-// 	const clientTokenTypes = new Set<string>(capability?.textDocument?.semanticTokens?.tokenTypes);
-// 	const clientTokenModifiers = new Set<string>(capability?.textDocument?.semanticTokens?.tokenModifiers);
-
-// 	const tokenTypes: string[] = [];
-// 	for (let type in SemanticTokenTypes) {
-// 		if (clientTokenTypes.has(type)) {
-// 			tokenTypes.push(type);
-// 		} else {
-// 			if (type === 'lambdaFunction') {
-// 				tokenTypes.push('function')
-// 			} else {
-// 				tokenTypes.push('type');
-// 			}
-// 		}
-// 	}
-
-// 	for (let modifier in SemanticTokenModifiers) {
-// 		if (clientTokenModifiers.has(modifier)) {
-// 			tokenModifiers.push(modifier)
-// 		}
-// 	}
-
-// 	return { tokenTypes, tokenModifiers };
-// }
-
-function buildTokens(node: Node, builder: SemanticTokensBuilder, document: TextDocument) {
+function buildTokens(node: Node, builder: SemanticTokensBuilder, document: TextDocument, regexp: RegExp) {
 	if(node.allNodeAndToken === undefined) {
 		return;
 	}
 
 	for (let entry of node.allNodeAndToken) {
-		if(isToken(entry)) {
-			const tokenType = SKToSemanticLegend(entry.kind);
+		if(entry === undefined) {
+			continue;
+		}
+		if(!(entry instanceof Node)) {
+			let tokenType = SKToSemanticLegend(entry.kind);
+			if(tokenType === undefined) {
+				if(regexp.test(getTextForToken(entry, document.getText()))) {
+					tokenType = 16; //TODO this is hard coded.
+				}
+			}
 			//Only push mapped types
 			if(tokenType !== undefined) {
 				const position = document.positionAt(entry.start);
@@ -178,14 +162,14 @@ function buildTokens(node: Node, builder: SemanticTokensBuilder, document: TextD
 				builder.push(position.line, position.character, entry.length - (entry.start - entry.fullStart), tokenType, tokenModifier);
 			}
 		} else {
-			buildTokens(entry, builder, document);
+			buildTokens(entry, builder, document, regexp);
 		}
 	}
 }
 
 
 connection.languages.semanticTokens.on((semanticTokensParams: SemanticTokensParams) => {
-	connection.console.log('Server is finding tokens');
+	console.log('Server is finding tokens');
 	const document = documents.get(semanticTokensParams.textDocument.uri);
 	if (document === undefined) {
 		return {
@@ -194,10 +178,31 @@ connection.languages.semanticTokens.on((semanticTokensParams: SemanticTokensPara
 	}
 	const builder = getTokenBuilder(document);
 	//TODO store wdoc somewhere instead of recalculating
-	let wdoc: Node = parse(document.getText());
-	buildTokens(wdoc, builder, document);
+	let wdoc: DocumentNode = parse(document.getText());
+	let globalVars: [string, Token<SK>][] = tokensToStringTokens(getGlobalVariables(wdoc), wdoc.lexer);
+	let playerVars: [string, Token<SK>][] = tokensToStringTokens(getPlayerVariables(wdoc), wdoc.lexer);
+	let subroutineNames: [string, Token<SK>][] = tokensToStringTokens(getSubroutineNames(wdoc), wdoc.lexer);
+
+	let allStrings: string[] = extractStrings(globalVars).concat(extractStrings(playerVars)).concat(extractStrings(subroutineNames));
+
+	let regexp: RegExp = new RegExp(allStrings.join('|'), 'g');
+
+
+	buildTokens(wdoc, builder, document, regexp);
 	return builder.build();
 });
+
+function tokensToStringTokens(tokens: Token<SK>[], lexer: Lexer): [string, Token<SK>][] {
+	return tokens.map<[string, Token<SK>]>(function (value: Token<SK>): [string, Token<SK>]{
+		return [lexer.getTextForToken(value), value];
+	});
+}
+
+function extractStrings(stringTuples: [string, any][]): string[] {
+	return stringTuples.map<string>(function (value: [string, any]): string {
+		return value[0];
+	});
+}
 
 // The example settings
 interface ExampleSettings {
@@ -253,7 +258,7 @@ documents.onDidClose(e => {
 documents.onDidChangeContent(change => {
 	connection.console.log('Starting parsing');
 	let wdoc: Node = parse(change.document.getText());
-	console.log(wdoc);
+	// console.log(wdoc);
 	connection.console.log('Finished parsing');
 
 	validateTextDocument(change.document, wdoc);
@@ -334,25 +339,6 @@ connection.onCompletionResolve(
 		return item;
 	}
 );
-
-connection.onDidOpenTextDocument((params) => {
-	// A text document got opened in VSCode.
-	// params.textDocument.uri uniquely identifies the document. For documents store on disk this is a file URI.
-	// params.textDocument.text the initial full content of the document.
-	connection.console.log(`${params.textDocument.uri} opened.`);
-
-});
-connection.onDidChangeTextDocument((params) => {
-	// The content of a text document did change in VSCode.
-	// params.textDocument.uri uniquely identifies the document.
-	// params.contentChanges describe the content changes to the document.
-	connection.console.log(`${params.textDocument.uri} changed: ${JSON.stringify(params.contentChanges)}`);
-});
-connection.onDidCloseTextDocument((params) => {
-	// A text document got closed in VSCode.
-	// params.textDocument.uri uniquely identifies the document.
-	connection.console.log(`${params.textDocument.uri} closed.`);
-});
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events

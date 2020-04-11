@@ -1,0 +1,1 @@
+import { SymbolInformation, TextDocument } from 'vscode-languageserver-types';

@@ -157,6 +157,8 @@ export class Lexer {
 		return SK.Unknown;
 	}
 
+
+	//TODO this needs to be way more accessible
 	/**
 	 * Returns a string of all whitespace preceding token
 	 * @param token 
@@ -182,4 +184,7 @@ export class Lexer {
 		return this.text.slice(token.start, token.fullStart + token.length);
 	}
 
+}
+export function getTextForToken(token: Token<any>, text: string): string {
+	return text.slice(token.start, token.fullStart + token.length);
 }
